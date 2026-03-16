@@ -4,7 +4,11 @@ const path = require("path");
 
 async function cleanOutputDirectory() {
   const outputDir = path.resolve(__dirname, "..", "dist");
-  await fsp.rm(outputDir, { recursive: true, force: true });
+  await fsp.mkdir(outputDir, { recursive: true });
+  const entries = await fsp.readdir(outputDir, { withFileTypes: true });
+  await Promise.all(
+    entries.map((entry) => fsp.rm(path.join(outputDir, entry.name), { recursive: true, force: true }))
+  );
 }
 
 function runBuild() {
