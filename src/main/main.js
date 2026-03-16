@@ -1445,7 +1445,7 @@ function scheduleAutoUpdateRestart(version) {
   autoUpdateRestartScheduled = true;
   setTimeout(() => {
     try {
-      autoUpdater.quitAndInstall(false, true);
+      autoUpdater.quitAndInstall(true, true);
     } catch (error) {
       autoUpdateRestartScheduled = false;
       sendLauncherEvent("app-update-error", {

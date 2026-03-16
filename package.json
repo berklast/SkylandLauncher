@@ -1,6 +1,6 @@
 {
   "name": "skyland-3-launcher",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "SKYLAND 3",
   "main": "src/main/main.js",
   "productName": "SKYLAND 3",
@@ -15,7 +15,7 @@
     "dev": "node scripts/start-electron.js",
     "build": "node scripts/build-installer.js",
     "pack": "electron-builder --dir",
-    "release": "electron-builder --publish always"
+    "release": "node scripts/build-installer.js --publish always"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
@@ -76,6 +76,6 @@
         "repo": "SkylandLauncher"
       }
     ],
-    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+    "artifactName": "SKYLAND-3-Setup-${version}-${arch}.${ext}"
   }
 }
