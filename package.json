@@ -1,6 +1,6 @@
 {
   "name": "skyland-3-launcher",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "SKYLAND 3",
   "main": "src/main/main.js",
   "productName": "SKYLAND 3",

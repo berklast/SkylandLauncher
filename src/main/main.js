@@ -479,6 +479,90 @@ function buildManagedModInstallId(projectId, gameVersion, loader) {
   return [projectId || "unknown", gameVersion || "unknown", normalizeModLoader(loader) || "vanilla"].join("::");
 }
 
+function normalizeManagedLoaderManifestEntry(gameVersion, loaderKey, entry = {}) {
+  const resolvedGameVersion = `${entry?.gameVersion ?? gameVersion ?? ""}`.trim();
+  const resolvedLoader = normalizeModLoader(entry?.loader || loaderKey);
+  if (!resolvedGameVersion || !resolvedLoader) {
+    return null;
+  }
+
+  return {
+    loader: resolvedLoader,
+    gameVersion: resolvedGameVersion,
+    version: `${entry?.version ?? ""}`.trim() || null,
+    artifact: `${entry?.artifact ?? ""}`.trim() || null,
+    customId: `${entry?.customId ?? ""}`.trim() || null,
+    profilePath: `${entry?.profilePath ?? ""}`.trim() || null,
+    installerPath: `${entry?.installerPath ?? ""}`.trim() || null,
+    updatedAt: entry?.updatedAt || null
+  };
+}
+
+function getManagedLoaderEntries(manifest) {
+  const entries = [];
+  const loaders = manifest?.loaders ?? {};
+
+  for (const [gameVersion, storedEntry] of Object.entries(loaders)) {
+    if (normalizeModLoader(storedEntry?.loader)) {
+      const normalizedEntry = normalizeManagedLoaderManifestEntry(gameVersion, storedEntry.loader, storedEntry);
+      if (normalizedEntry) {
+        entries.push(normalizedEntry);
+      }
+      continue;
+    }
+
+    if (!storedEntry || typeof storedEntry !== "object") {
+      continue;
+    }
+
+    for (const [loaderKey, loaderEntry] of Object.entries(storedEntry)) {
+      const normalizedEntry = normalizeManagedLoaderManifestEntry(gameVersion, loaderKey, loaderEntry);
+      if (normalizedEntry) {
+        entries.push(normalizedEntry);
+      }
+    }
+  }
+
+  return Array.from(
+    new Map(entries.map((entry) => [`${entry.gameVersion}::${entry.loader}`, entry])).values()
+  );
+}
+
+function getManagedLoaderEntry(manifest, gameVersion, loader = null) {
+  const normalizedLoader = normalizeModLoader(loader);
+  return (
+    getManagedLoaderEntries(manifest).find(
+      (entry) =>
+        entry.gameVersion === `${gameVersion ?? ""}`.trim() &&
+        (!normalizedLoader || entry.loader === normalizedLoader)
+    ) || null
+  );
+}
+
+function setManagedLoaderEntry(manifest, entry) {
+  const normalizedEntry = normalizeManagedLoaderManifestEntry(entry?.gameVersion, entry?.loader, entry);
+  if (!normalizedEntry) {
+    return null;
+  }
+
+  const gameVersion = normalizedEntry.gameVersion;
+  const currentEntries = getManagedLoaderEntries({
+    loaders: {
+      [gameVersion]: manifest?.loaders?.[gameVersion] ?? {}
+    }
+  });
+
+  manifest.loaders = manifest?.loaders && typeof manifest.loaders === "object" ? manifest.loaders : {};
+  manifest.loaders[gameVersion] = Object.fromEntries(
+    [...currentEntries.filter((item) => item.loader !== normalizedEntry.loader), normalizedEntry].map((item) => [
+      item.loader,
+      item
+    ])
+  );
+
+  return normalizedEntry;
+}
+
 function normalizeManagedModEntry(fallbackKey, entry = {}) {
   const projectId = `${entry?.projectId ?? entry?.project_id ?? fallbackKey ?? ""}`.trim();
   if (!projectId) {
@@ -603,10 +687,15 @@ async function readManagedModsManifest(gameDir) {
       }
     }
 
-    return {
+    const manifest = {
       projects,
-      loaders: parsed?.loaders ?? {}
+      loaders: {}
     };
+    for (const entry of getManagedLoaderEntries({ loaders: parsed?.loaders ?? {} })) {
+      setManagedLoaderEntry(manifest, entry);
+    }
+
+    return manifest;
   } catch (error) {
     return {
       projects: {},
@@ -621,13 +710,17 @@ async function writeManagedModsManifest(gameDir, manifest) {
   for (const entry of getManagedModEntries(manifest)) {
     projects[entry.installId] = entry;
   }
+  const loadersManifest = { loaders: {} };
+  for (const entry of getManagedLoaderEntries(manifest)) {
+    setManagedLoaderEntry(loadersManifest, entry);
+  }
   await fsp.mkdir(path.dirname(manifestPath), { recursive: true });
   await fsp.writeFile(
     manifestPath,
     JSON.stringify(
       {
         projects,
-        loaders: manifest?.loaders ?? {}
+        loaders: loadersManifest.loaders
       },
       null,
       2
@@ -993,7 +1086,7 @@ async function installModrinthMod(payload = {}) {
 
   if (autoProvisionLoader) {
     preparedLoader = await ensureManagedLoaderReady(loader, gameVersion, gameDir);
-    manifest.loaders[gameVersion] = {
+    setManagedLoaderEntry(manifest, {
       loader: preparedLoader.loader,
       gameVersion,
       version: preparedLoader.loaderVersion || preparedLoader.forgeVersion,
@@ -1002,7 +1095,7 @@ async function installModrinthMod(payload = {}) {
       profilePath: preparedLoader.profilePath || null,
       installerPath: preparedLoader.installerPath || null,
       updatedAt: new Date().toISOString()
-    };
+    });
   }
 
   const rootVersion =
@@ -1893,12 +1986,36 @@ async function getAvailableVersions() {
   );
 
   const baseVersions = [...dedupedCustom, ...mergedOfficial];
-  const managedVersions = Object.entries(manifest.loaders || {})
-    .map(([gameVersion, entry]) => {
-      const loader = normalizeModLoader(entry?.loader);
-      if (!loader) {
-        return null;
-      }
+  const managedLoaderCandidates = new Map(
+    getManagedLoaderEntries(manifest).map((entry) => [`${entry.gameVersion}::${entry.loader}`, entry])
+  );
+
+  for (const modEntry of getManagedModEntries(manifest)) {
+    const loader = normalizeModLoader(modEntry.loader);
+    const gameVersion = `${modEntry.gameVersion ?? ""}`.trim();
+    if (!gameVersion || !loader || !supportsManagedLoaderAutoProvision(loader)) {
+      continue;
+    }
+
+    const key = `${gameVersion}::${loader}`;
+    if (!managedLoaderCandidates.has(key)) {
+      managedLoaderCandidates.set(key, {
+        loader,
+        gameVersion,
+        version: null,
+        artifact: null,
+        customId: null,
+        profilePath: null,
+        installerPath: null,
+        updatedAt: modEntry.updatedAt || null
+      });
+    }
+  }
+
+  const managedVersions = Array.from(managedLoaderCandidates.values())
+    .map((entry) => {
+      const loader = entry.loader;
+      const gameVersion = entry.gameVersion;
 
       const hasNativeLoaderVersion = baseVersions.some(
         (version) => inferMinecraftVersionId(version) === gameVersion && inferModLoader(version) === loader
@@ -2295,7 +2412,24 @@ async function resolveManagedLoaderForLaunch(gameDir, selectedVersion) {
   }
 
   const manifest = await readManagedModsManifest(gameDir);
-  const entry = manifest.loaders?.[gameVersion];
+  const requestedLoader = normalizeModLoader(selectedVersion?.managedLoader);
+  let entry = getManagedLoaderEntry(manifest, gameVersion, requestedLoader);
+
+  if (!entry && requestedLoader && supportsManagedLoaderAutoProvision(requestedLoader)) {
+    const preparedLoader = await ensureManagedLoaderReady(requestedLoader, gameVersion, gameDir);
+    entry = setManagedLoaderEntry(manifest, {
+      loader: preparedLoader.loader,
+      gameVersion,
+      version: preparedLoader.loaderVersion || preparedLoader.forgeVersion,
+      artifact: preparedLoader.artifact || null,
+      customId: preparedLoader.customId || null,
+      profilePath: preparedLoader.profilePath || null,
+      installerPath: preparedLoader.installerPath || null,
+      updatedAt: new Date().toISOString()
+    });
+    await writeManagedModsManifest(gameDir, manifest);
+  }
+
   if (!entry?.loader) {
     return null;
   }
@@ -2307,7 +2441,7 @@ async function resolveManagedLoaderForLaunch(gameDir, selectedVersion) {
       preparedLoader.customId !== entry.customId ||
       preparedLoader.profilePath !== entry.profilePath
     ) {
-      manifest.loaders[gameVersion] = {
+      setManagedLoaderEntry(manifest, {
         loader: preparedLoader.loader,
         gameVersion,
         version: preparedLoader.loaderVersion,
@@ -2316,7 +2450,7 @@ async function resolveManagedLoaderForLaunch(gameDir, selectedVersion) {
         profilePath: preparedLoader.profilePath,
         installerPath: null,
         updatedAt: new Date().toISOString()
-      };
+      });
       await writeManagedModsManifest(gameDir, manifest);
     }
 
@@ -2336,7 +2470,7 @@ async function resolveManagedLoaderForLaunch(gameDir, selectedVersion) {
       preparedLoader.installerPath !== entry.installerPath ||
       preparedLoader.artifact !== entry.artifact
     ) {
-      manifest.loaders[gameVersion] = {
+      setManagedLoaderEntry(manifest, {
         loader: preparedLoader.loader,
         gameVersion,
         version: preparedLoader.forgeVersion,
@@ -2345,7 +2479,7 @@ async function resolveManagedLoaderForLaunch(gameDir, selectedVersion) {
         profilePath: null,
         installerPath: preparedLoader.installerPath,
         updatedAt: new Date().toISOString()
-      };
+      });
       await writeManagedModsManifest(gameDir, manifest);
     }
 
