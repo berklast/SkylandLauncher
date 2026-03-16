@@ -75,6 +75,12 @@ const dom = {
   progressPercent: document.querySelector("#progressPercent"),
   progressFill: document.querySelector("#progressFill"),
   launchNotice: document.querySelector("#launchNotice"),
+  appUpdateModal: document.querySelector("#appUpdateModal"),
+  appUpdateTitle: document.querySelector("#appUpdateTitle"),
+  appUpdateText: document.querySelector("#appUpdateText"),
+  appUpdateStageLabel: document.querySelector("#appUpdateStageLabel"),
+  appUpdatePercent: document.querySelector("#appUpdatePercent"),
+  appUpdateProgressFill: document.querySelector("#appUpdateProgressFill"),
   settingsSummary: document.querySelector("#settingsSummary"),
   logList: document.querySelector("#logList"),
   logoutButton: document.querySelector("#logoutButton"),
@@ -104,6 +110,10 @@ const appState = {
   currentUser: null,
   launcherView: "play",
   updateAnnouncementVisible: false,
+  appUpdate: {
+    visible: false,
+    percent: 0
+  },
   mods: {
     items: [],
     totalHits: 0,
@@ -283,6 +293,43 @@ function hideUpdateAnnouncement() {
 
   appState.updateAnnouncementVisible = false;
   dom.updateAnnouncementModal.classList.add("hidden");
+}
+
+function showAppUpdateModal({
+  title = "Launcher guncelleniyor",
+  text = "Yeni surum indiriliyor. Hazir olunca launcher otomatik kapanip yeniden acilacak.",
+  stageLabel = "Hazirlaniyor",
+  percent = appState.appUpdate.percent
+} = {}) {
+  if (!dom.appUpdateModal) {
+    return;
+  }
+
+  const safePercent = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+  appState.appUpdate.visible = true;
+  appState.appUpdate.percent = safePercent;
+  dom.appUpdateTitle.textContent = title;
+  dom.appUpdateText.textContent = text;
+  dom.appUpdateStageLabel.textContent = stageLabel;
+  dom.appUpdatePercent.textContent = `${safePercent}%`;
+  dom.appUpdateProgressFill.style.width = `${safePercent}%`;
+  dom.appUpdateModal.classList.remove("hidden");
+}
+
+function hideAppUpdateModal() {
+  if (!dom.appUpdateModal) {
+    return;
+  }
+
+  appState.appUpdate.visible = false;
+  appState.appUpdate.percent = 0;
+  dom.appUpdateModal.classList.add("hidden");
+  dom.appUpdateTitle.textContent = "Launcher guncelleniyor";
+  dom.appUpdateText.textContent =
+    "Yeni surum bulunursa burada indirme ve yeniden baslatma ekrani gorunecek.";
+  dom.appUpdateStageLabel.textContent = "Bekleniyor";
+  dom.appUpdatePercent.textContent = "0%";
+  dom.appUpdateProgressFill.style.width = "0%";
 }
 
 function maybeShowUpdateAnnouncement() {
@@ -1991,6 +2038,61 @@ function wireMods() {
 
 function wireLauncherEvents() {
   window.skylandAPI.onLauncherEvent((event) => {
+    if (event.type === "app-update-checking") {
+      addLogEntry("Launcher guncellemesi kontrol ediliyor...");
+      return;
+    }
+
+    if (event.type === "app-update-available") {
+      const versionLabel = event.payload?.version ? ` v${event.payload.version}` : "";
+      showAppUpdateModal({
+        title: `Launcher guncellemesi bulundu${versionLabel}`,
+        text: "Yeni surum indiriliyor. Hazir olunca launcher otomatik kapanip guncel haliyle yeniden acilacak.",
+        stageLabel: "Indiriliyor",
+        percent: 0
+      });
+      addLogEntry(`Launcher icin yeni surum bulundu${versionLabel}. Indirme basladi.`);
+      return;
+    }
+
+    if (event.type === "app-update-progress") {
+      const percent = Number(event.payload?.percent ?? 0);
+      showAppUpdateModal({
+        title: dom.appUpdateTitle?.textContent || "Launcher guncelleniyor",
+        text: "Guncelleme indiriliyor. Tamamlaninca launcher otomatik kapanip yeniden acilacak.",
+        stageLabel: "Indiriliyor",
+        percent
+      });
+      return;
+    }
+
+    if (event.type === "app-update-downloaded") {
+      const versionLabel = event.payload?.version ? ` v${event.payload.version}` : "";
+      showAppUpdateModal({
+        title: `Guncelleme hazir${versionLabel}`,
+        text: "Launcher kapaniyor ve guncel surumle tekrar aciliyor...",
+        stageLabel: "Yeniden baslatiliyor",
+        percent: 100
+      });
+      addLogEntry(`Launcher guncellemesi indirildi${versionLabel}. Yeniden baslatma hazirlaniyor.`);
+      return;
+    }
+
+    if (event.type === "app-update-not-available") {
+      addLogEntry("Launcher zaten guncel.");
+      return;
+    }
+
+    if (event.type === "app-update-error") {
+      hideAppUpdateModal();
+      const message = event.payload?.message ?? "Bilinmeyen hata";
+      addLogEntry(`Launcher guncellemesi denetlenemedi: ${message}`);
+      if (!dom.launcherScreen.classList.contains("hidden")) {
+        showLaunchNotice(`Launcher guncellemesi denetlenemedi: ${message}`, "error");
+      }
+      return;
+    }
+
     if (event.type === "progress") {
       const value = Number(event.payload?.progress ?? event.payload?.value ?? 0);
       const total = Number(event.payload?.total ?? 100);
@@ -2171,6 +2273,7 @@ async function boot() {
   }
 
   wireLauncherEvents();
+  window.skylandAPI.notifyRendererReady();
 
   const restored = await restoreSessionFromRefreshToken();
   if (restored) {

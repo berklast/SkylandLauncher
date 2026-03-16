@@ -5,6 +5,7 @@ const fsp = require("fs/promises");
 const os = require("os");
 const { execFile } = require("child_process");
 const { Readable } = require("stream");
+const { autoUpdater } = require("electron-updater");
 const { Client, Authenticator } = require("minecraft-launcher-core");
 const { readState, patchState } = require("./state");
 
@@ -23,6 +24,8 @@ const versionManifestCache = {
 };
 const versionMetaCache = new Map();
 const managedJavaInstalls = new Map();
+let autoUpdateInitialized = false;
+let autoUpdateRestartScheduled = false;
 
 let mainWindow = null;
 let minecraftOverlayWindow = null;
@@ -1341,6 +1344,86 @@ function sendLauncherEvent(type, payload = {}) {
   mainWindow.webContents.send("launcher:event", { type, payload });
 }
 
+function scheduleAutoUpdateRestart(version) {
+  if (autoUpdateRestartScheduled) {
+    return;
+  }
+
+  autoUpdateRestartScheduled = true;
+  setTimeout(() => {
+    try {
+      autoUpdater.quitAndInstall(false, true);
+    } catch (error) {
+      autoUpdateRestartScheduled = false;
+      sendLauncherEvent("app-update-error", {
+        message: error.message || "Guncelleme kurulurken launcher yeniden baslatilamadi.",
+        version: version || null
+      });
+    }
+  }, 2200);
+}
+
+function initAutoUpdater() {
+  if (autoUpdateInitialized || !app.isPackaged) {
+    return;
+  }
+
+  autoUpdateInitialized = true;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on("checking-for-update", () => {
+    sendLauncherEvent("app-update-checking", {
+      message: "Launcher guncellemesi kontrol ediliyor..."
+    });
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    sendLauncherEvent("app-update-available", {
+      version: info?.version || null,
+      message: `Yeni launcher surumu bulundu${info?.version ? `: ${info.version}` : ""}. Indirme basliyor...`
+    });
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    sendLauncherEvent("app-update-progress", {
+      version: progress?.version || null,
+      percent: Number(progress?.percent || 0),
+      transferred: Number(progress?.transferred || 0),
+      total: Number(progress?.total || 0),
+      bytesPerSecond: Number(progress?.bytesPerSecond || 0)
+    });
+  });
+
+  autoUpdater.on("update-not-available", (info) => {
+    sendLauncherEvent("app-update-not-available", {
+      version: info?.version || null,
+      message: "Launcher zaten guncel."
+    });
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    const version = info?.version || null;
+    sendLauncherEvent("app-update-downloaded", {
+      version,
+      message: `Launcher guncellemesi hazir${version ? `: ${version}` : ""}. Uygulama yeniden baslatiliyor...`
+    });
+    scheduleAutoUpdateRestart(version);
+  });
+
+  autoUpdater.on("error", (error) => {
+    sendLauncherEvent("app-update-error", {
+      message: error?.message || "Launcher guncellemesi denetlenemedi."
+    });
+  });
+
+  autoUpdater.checkForUpdatesAndNotify().catch((error) => {
+    sendLauncherEvent("app-update-error", {
+      message: error?.message || "Launcher guncellemesi denetlenemedi."
+    });
+  });
+}
+
 function isBenignRendererConsoleMessage(message) {
   const text = `${message ?? ""}`.toLowerCase();
   return text.includes("electron security warning") || text.includes("third-party cookie will be blocked");
@@ -2393,6 +2476,10 @@ if (process.platform === "win32") {
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
+  ipcMain.on("app:renderer-ready", () => {
+    initAutoUpdater();
+  });
+
   ipcMain.handle("app:bootstrap", async () => {
     const state = await readState();
     const remainingMs = Math.max(0, (state.session?.expiryAt ?? 0) - Date.now());

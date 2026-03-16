@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("skylandAPI", {
   bootstrap: () => ipcRenderer.invoke("app:bootstrap"),
+  notifyRendererReady: () => ipcRenderer.send("app:renderer-ready"),
   saveSettings: (settings) => ipcRenderer.invoke("settings:save", settings),
   saveProfile: (profile) => ipcRenderer.invoke("profile:save", profile),
   saveSession: (session) => ipcRenderer.invoke("session:save", session),

@@ -1,24 +1,30 @@
 {
   "name": "skyland-3-launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SKYLAND 3",
   "main": "src/main/main.js",
   "productName": "SKYLAND 3",
   "author": "Berklast",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/berklast/SkylandLauncher.git"
+  },
   "license": "MIT",
   "scripts": {
     "start": "node scripts/start-electron.js",
     "dev": "node scripts/start-electron.js",
     "build": "node scripts/build-installer.js",
-    "pack": "electron-builder --dir"
+    "pack": "electron-builder --dir",
+    "release": "electron-builder --publish always"
   },
   "dependencies": {
+    "electron-updater": "^6.8.3",
     "minecraft-launcher-core": "^3.18.2"
   },
   "devDependencies": {
+    "7zip-bin": "^5.2.0",
     "electron": "^30.5.1",
     "electron-builder": "^26.8.1",
-    "7zip-bin": "^5.2.0",
     "rcedit": "^4.0.1"
   },
   "build": {
@@ -63,6 +69,13 @@
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "berklast",
+        "repo": "SkylandLauncher"
+      }
+    ],
     "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
   }
 }

@@ -388,6 +388,27 @@
         </section>
       </main>
 
+      <div class="modal hidden" id="appUpdateModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card app-update-card">
+          <p class="eyebrow">Launcher Guncellemesi</p>
+          <h3 id="appUpdateTitle">Launcher guncelleniyor</h3>
+          <p class="muted" id="appUpdateText">
+            Yeni surum bulunursa burada indirme ve yeniden baslatma ekrani gorunecek.
+          </p>
+
+          <div class="app-update-progress">
+            <div class="progress-row">
+              <span id="appUpdateStageLabel">Bekleniyor</span>
+              <strong id="appUpdatePercent">0%</strong>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="appUpdateProgressFill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="modal hidden" id="updateAnnouncementModal">
         <div class="modal-backdrop"></div>
         <div class="modal-card update-announcement-card">

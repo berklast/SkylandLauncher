@@ -1667,6 +1667,25 @@ label span {
   animation: formPop 0.22s ease;
 }
 
+.app-update-card {
+  width: min(620px, calc(100vw - 24px));
+  padding: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(87, 246, 195, 0.16), transparent 28%),
+    radial-gradient(circle at top left, rgba(127, 215, 255, 0.14), transparent 26%),
+    linear-gradient(145deg, rgba(8, 22, 39, 0.98), rgba(5, 14, 26, 0.99));
+}
+
+.app-update-card h3 {
+  font-size: clamp(1.75rem, 3vw, 2.4rem);
+}
+
+.app-update-progress {
+  margin-top: 22px;
+  display: grid;
+  gap: 12px;
+}
+
 .update-announcement-card {
   width: min(760px, calc(100vw - 24px));
   overflow: hidden;
