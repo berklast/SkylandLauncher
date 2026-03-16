@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://skylanda-211e2-default-rtdb.firebaseio.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <title>SKYLAND 3</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-frame">
+      <div class="launch-overlay hidden" id="launchOverlay">
+        <div class="overlay-card">
+          <div class="overlay-logo-shell">
+            <img src="./assets/skyland-logo.png" alt="SkyLand" class="overlay-logo" />
+          </div>
+          <p class="eyebrow">SkyLand Prime</p>
+          <h2>Oyun yukleniyor</h2>
+          <p id="launchOverlayText">Dosyalar kontrol ediliyor...</p>
+          <div class="progress-track large">
+            <div class="progress-fill" id="launchOverlayFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <main class="shell hidden" id="shell" data-scene="auth">
+        <section class="auth-screen hidden" id="authScreen" data-mode="login">
+          <div class="auth-layout">
+            <aside class="showcase-panel">
+              <div class="showcase-ribbon">SkyLand Prime Launcher</div>
+              <div class="showcase-burst"></div>
+              <img src="./assets/skyland-logo.png" alt="SkyLand" class="showcase-logo" />
+
+              <div class="showcase-copy">
+                <p class="eyebrow" id="authModeBadge">Prime access</p>
+                <h1 id="authModeTitle">SkyLand hesabina giris yap</h1>
+                <p class="lead" id="authModeDescription">
+                  Launcher, surumler ve profil kontrolun tek merkezde. Dogrudan gir, surum sec, oyuna gec.
+                </p>
+              </div>
+
+              <div class="feature-grid">
+                <article class="feature-tile">
+                  <span>30 Gun</span>
+                  <strong>kalici oturum</strong>
+                  <p>Yeniden sifre girmeden launcher'a geri don.</p>
+                </article>
+                <article class="feature-tile">
+                  <span>Canli</span>
+                  <strong>skin onizleme</strong>
+                  <p>Nick degistiginde gorunus paneli aninda yenilenir.</p>
+                </article>
+                <article class="feature-tile">
+                  <span>Tek Panel</span>
+                  <strong>profil + launch</strong>
+                  <p>Versiyon secimi, hesap ve ayarlar ayni ekranda toplandi.</p>
+                </article>
+                <article class="feature-tile">
+                  <span>Prime UI</span>
+                  <strong>akici gecisler</strong>
+                  <p>Formlar, kartlar ve oyun akisi daha rafine animasyonlar kullanir.</p>
+                </article>
+              </div>
+            </aside>
+
+            <div class="auth-panel-wrap">
+              <div class="auth-card">
+                <div class="auth-card-head">
+                  <p class="eyebrow">Hesap Merkezi</p>
+                  <h2>Giris ve kayit</h2>
+                </div>
+
+                <div class="auth-tabs">
+                  <button class="tab-button active" data-auth-mode="login" type="button">Giris Yap</button>
+                  <button class="tab-button" data-auth-mode="register" type="button">Kayit Ol</button>
+                </div>
+
+                <div class="message-box hidden" id="authMessage"></div>
+
+                <form id="loginForm" class="auth-form">
+                  <label>
+                    <span>Kullanici adi</span>
+                    <input name="username" type="text" maxlength="24" required />
+                  </label>
+                  <label>
+                    <span>Sifre</span>
+                    <input name="password" type="password" minlength="6" required />
+                  </label>
+
+                  <div class="form-actions">
+                    <button type="submit" class="primary-button">Giris Yap</button>
+                    <button type="button" class="ghost-button" id="resendVerificationButton">Dogrulama Gonder</button>
+                  </div>
+                </form>
+
+                <form id="registerForm" class="auth-form hidden">
+                  <label>
+                    <span>Launcher kullanici adi</span>
+                    <input name="username" type="text" maxlength="24" required />
+                  </label>
+                  <label>
+                    <span>Gosterilecek ad</span>
+                    <input name="displayName" type="text" maxlength="32" required />
+                  </label>
+                  <label>
+                    <span>E-posta</span>
+                    <input name="email" type="email" required />
+                  </label>
+                  <label>
+                    <span>Sifre</span>
+                    <input name="password" type="password" minlength="6" required />
+                  </label>
+                  <label>
+                    <span>Sifre tekrar</span>
+                    <input name="passwordConfirm" type="password" minlength="6" required />
+                  </label>
+
+                  <div class="form-actions">
+                    <button type="submit" class="primary-button">Hesap Ac</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="launcher-screen hidden" id="launcherScreen">
+          <div class="launcher-simple-shell">
+            <aside class="launcher-sidebar-simple panel">
+              <div class="sidebar-simple-brand">
+                <div class="brand-logo-ring">
+                  <img src="./assets/skyland-logo.png" alt="SkyLand" class="topbar-logo" />
+                </div>
+                <div>
+                  <p class="eyebrow">SkyLand Prime</p>
+                  <h2>Launcher</h2>
+                </div>
+              </div>
+
+              <div class="sidebar-simple-nav">
+                <button type="button" class="sidebar-nav-button active" data-launcher-view="play">Play</button>
+                <button type="button" class="sidebar-nav-button" data-launcher-view="profile">Profil</button>
+                <button type="button" class="sidebar-nav-button" data-launcher-view="mods">Mod Kutuphanesi</button>
+                <button type="button" class="sidebar-nav-button" id="openSettingsButton">Ayarlar</button>
+              </div>
+
+              <div class="sidebar-account-card">
+                <span class="sidebar-label">Aktif hesap</span>
+                <strong id="sessionUserLabel">Misafir</strong>
+                <small id="sessionExpiryLabel">Oturum kapali</small>
+              </div>
+
+              <button type="button" class="danger-button sidebar-logout-button" id="logoutButton">Cikis Yap</button>
+
+              <div class="hidden" id="settingsSummary"></div>
+            </aside>
+
+            <div class="launcher-main-simple">
+              <section class="launcher-view" data-view-panel="play">
+                <header class="simple-header panel">
+                  <div>
+                    <p class="eyebrow">Play</p>
+                    <h1>Oyuna hazir</h1>
+                    <p class="muted">Versiyonu sec ve tek tikla Minecraft'i ac.</p>
+                  </div>
+                </header>
+
+                <article class="panel launch-card-clean">
+                  <div class="launch-card-head">
+                    <div>
+                      <p class="eyebrow">SkyLand Prime</p>
+                      <h2>Launcher surum merkezi</h2>
+                      <p class="muted">Sadece surum sec, durumu kontrol et ve oyuna gir.</p>
+                    </div>
+
+                    <div class="launch-card-badge">
+                      <img src="./assets/skyland-logo.png" alt="SkyLand" class="launch-card-logo" />
+                    </div>
+                  </div>
+
+                  <div class="launch-toolbar-clean">
+                    <label class="play-version-field">
+                      <span>Surum</span>
+                      <select id="versionSelect">
+                        <option>Surumler yukleniyor...</option>
+                      </select>
+                    </label>
+
+                    <button type="button" class="ghost-button" id="refreshVersionsButton">Yenile</button>
+                  </div>
+
+                  <div class="version-badges compact-badges clean-badges">
+                    <div class="meta-box">
+                      <span>Tip</span>
+                      <strong id="versionTypeBadge">-</strong>
+                    </div>
+                    <div class="meta-box">
+                      <span>Kaynak</span>
+                      <strong id="versionSourceBadge">-</strong>
+                    </div>
+                    <div class="meta-box">
+                      <span>Durum</span>
+                      <strong id="versionInstallBadge">-</strong>
+                    </div>
+                  </div>
+
+                  <div class="launch-footer-clean">
+                    <div class="play-progress-block clean-progress-block">
+                      <div class="progress-row">
+                        <span id="progressLabel">Hazir</span>
+                        <strong id="progressPercent">0%</strong>
+                      </div>
+                      <div class="progress-track">
+                        <div class="progress-fill" id="progressFill"></div>
+                      </div>
+                    </div>
+
+                    <button type="button" class="primary-button giant simple-play-button" id="playButton">OYNA</button>
+                  </div>
+
+                  <div class="launch-notice hidden" id="launchNotice"></div>
+                </article>
+
+                <div class="hidden" id="logList"></div>
+              </section>
+
+              <section class="launcher-view hidden" data-view-panel="profile">
+                <header class="simple-header panel">
+                  <div>
+                    <p class="eyebrow">Profil</p>
+                    <h1>Oyuncu ayarlari</h1>
+                    <p class="muted">Launcher hesabi sabit kalir. Minecraft nicki ayri degisebilir.</p>
+                  </div>
+                </header>
+
+                <article class="panel profile-panel-clean">
+                  <div class="profile-clean-layout">
+                    <div class="player-preview-card">
+                      <div class="player-preview-top">
+                        <div class="player-preview-frame">
+                          <img id="skinPreview" src="./assets/skyland-logo.png" alt="Skin onizleme" />
+                        </div>
+                        <div class="player-preview-copy">
+                          <p class="eyebrow">Oyuncu Gorunumu</p>
+                          <h3>Minecraft profili</h3>
+                          <p class="muted">Buyuk onizleme yerine daha temiz bir oyuncu karti kullandim.</p>
+                        </div>
+                      </div>
+
+                      <div class="player-preview-notes">
+                        <div class="preview-note">
+                          <span>Launcher hesabi</span>
+                          <strong>Degismez</strong>
+                        </div>
+                        <div class="preview-note">
+                          <span>Minecraft nicki</span>
+                          <strong>Ayri degisir</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <form id="profileForm" class="stack-form profile-form-clean">
+                      <label>
+                        <span>Launcher kullanici adi (degismez)</span>
+                        <input id="launcherUsernameInput" name="launcherUsername" type="text" readonly />
+                      </label>
+                      <label>
+                        <span>Gosterilecek ad</span>
+                        <input id="displayNameInput" name="displayName" type="text" required />
+                      </label>
+                      <label>
+                        <span>Minecraft nicki (oyunda gorunen ad)</span>
+                        <input id="mcNicknameInput" name="mcNickname" type="text" maxlength="16" required />
+                      </label>
+                      <button type="submit" class="primary-button">Profili Kaydet</button>
+                    </form>
+                  </div>
+                </article>
+              </section>
+
+              <section class="launcher-view hidden" data-view-panel="mods">
+                <header class="simple-header panel">
+                  <div>
+                    <p class="eyebrow">Mod Kutuphanesi</p>
+                    <h1>Secili surum icin mod kutuphanesi</h1>
+                    <p class="muted">Modlari secili surume gore listele, kur, guncelle ve alttaki kurulu modlar panelinden yonet.</p>
+                  </div>
+                </header>
+
+                <article class="panel mods-panel">
+                  <div class="mods-panel-head">
+                    <div>
+                      <p class="eyebrow">Mod Kutuphanesi</p>
+                      <h2>Modrinth modlarini tara</h2>
+                      <p class="muted">Bir Minecraft surumu icin birden fazla mod kurabilir, daha sonra alttaki kurulu modlar alanindan silebilir ve guncelleyebilirsin.</p>
+                    </div>
+
+                    <div class="mods-panel-badge">
+                      <span>Aktif klasor</span>
+                      <strong id="modsGameDirLabel">-</strong>
+                    </div>
+                  </div>
+
+                  <form class="mods-toolbar" id="modsSearchForm">
+                    <label class="mods-search-field">
+                      <span>Mod ara</span>
+                      <input
+                        id="modSearchInput"
+                        name="query"
+                        type="search"
+                        maxlength="80"
+                        placeholder="Sodium, Iris, JourneyMap..."
+                      />
+                    </label>
+
+                    <label class="mods-loader-field">
+                      <span>Loader</span>
+                      <select id="modLoaderSelect" name="loader">
+                        <option value="auto">Otomatik</option>
+                        <option value="fabric">Fabric</option>
+                        <option value="forge">Forge</option>
+                        <option value="quilt">Quilt</option>
+                        <option value="neoforge">NeoForge</option>
+                      </select>
+                    </label>
+
+                    <button type="submit" class="ghost-button" id="searchModsButton">Listele</button>
+                  </form>
+
+                  <div class="version-badges compact-badges clean-badges">
+                    <div class="meta-box">
+                      <span>Surum</span>
+                      <strong id="modsVersionBadge">-</strong>
+                    </div>
+                    <div class="meta-box">
+                      <span>Loader</span>
+                      <strong id="modsLoaderBadge">-</strong>
+                    </div>
+                    <div class="meta-box">
+                      <span>Sonuclar</span>
+                      <strong id="modsCountBadge">0</strong>
+                    </div>
+                  </div>
+
+                  <div class="launch-notice hidden" id="modsNotice"></div>
+                  <div class="mods-grid" id="modsGrid"></div>
+                </article>
+
+                <article class="panel mods-panel installed-mods-panel">
+                  <div class="mods-panel-head">
+                    <div>
+                      <p class="eyebrow">Kurulu Modlar</p>
+                      <h2>Secili surume yuklu modlar</h2>
+                      <p class="muted">Burada secili Minecraft surumu ve loader icin kurulu olan modlarin ismini, gorselini, guncelleme durumunu gorup tek tek silebilirsin.</p>
+                    </div>
+
+                    <div class="installed-mods-actions">
+                      <button type="button" class="ghost-button" id="refreshInstalledModsButton">Yenile</button>
+                      <button type="button" class="ghost-button" id="checkInstalledUpdatesButton">Guncellemeleri Kontrol Et</button>
+                      <button type="button" class="ghost-button danger-button" id="clearInstalledModsButton">Tumunu Sil</button>
+                    </div>
+                  </div>
+
+                  <div class="version-badges compact-badges clean-badges">
+                    <div class="meta-box">
+                      <span>Surum</span>
+                      <strong id="installedModsVersionBadge">-</strong>
+                    </div>
+                    <div class="meta-box">
+                      <span>Loader</span>
+                      <strong id="installedModsLoaderBadge">-</strong>
+                    </div>
+                    <div class="meta-box">
+                      <span>Kurulu</span>
+                      <strong id="installedModsCountBadge">0</strong>
+                    </div>
+                  </div>
+
+                  <div class="launch-notice hidden" id="installedModsNotice"></div>
+                  <div class="mods-grid installed-mods-grid" id="installedModsGrid"></div>
+                </article>
+              </section>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div class="modal hidden" id="updateAnnouncementModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-card update-announcement-card">
+          <div class="update-fireworks" aria-hidden="true">
+            <div class="firework firework-left">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="firework firework-center">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="firework firework-right">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+
+          <div class="update-announcement-copy">
+            <p class="eyebrow">Update Geldi</p>
+            <h3>Launcher yenilendi</h3>
+            <p class="muted">
+              Genis mod kutuphanesi ve yeni mod yonetebilirlik sistemi geldi.
+            </p>
+
+            <div class="update-announcement-highlights">
+              <div class="update-highlight-chip">
+                <strong>Genis Mod Kutuphanesi</strong>
+                <span>Modlari secili surume gore daha rahat tarayip kurabilirsin.</span>
+              </div>
+              <div class="update-highlight-chip">
+                <strong>Kurulu Modlar Yonetimi</strong>
+                <span>Ayni surume birden fazla mod kur, gorseliyle gor, sil veya guncelle.</span>
+              </div>
+            </div>
+
+            <button type="button" class="primary-button update-announcement-button" id="dismissUpdateAnnouncementButton">
+              Tamam
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal hidden" id="settingsModal">
+        <div class="modal-backdrop" data-close-modal="true"></div>
+        <div class="modal-card">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Ayarlar</p>
+              <h3>RAM, pencere ve klasor ayarlari</h3>
+            </div>
+            <button type="button" class="ghost-button" data-close-modal="true">Kapat</button>
+          </div>
+
+          <form id="settingsForm" class="settings-grid">
+            <label>
+              <span>Max RAM (MB)</span>
+              <input name="ramMb" type="number" min="1024" max="32768" step="256" required />
+            </label>
+            <label>
+              <span>Min RAM (MB)</span>
+              <input name="minRamMb" type="number" min="512" max="16384" step="256" required />
+            </label>
+            <label>
+              <span>Oyun dili</span>
+              <select name="language">
+                <option value="tr_tr">Turkce</option>
+                <option value="en_us">English</option>
+                <option value="de_de">Deutsch</option>
+                <option value="fr_fr">Francais</option>
+              </select>
+            </label>
+            <label>
+              <span>Ekran modu</span>
+              <select name="fullscreen">
+                <option value="false">Pencereli</option>
+                <option value="true">Tam ekran</option>
+              </select>
+              <small class="field-hint">
+                Tam ekran veya pencereli olarak baslatabilirsin.
+              </small>
+            </label>
+            <label>
+              <span>Genislik</span>
+              <input name="resolutionWidth" type="number" min="854" max="3840" step="2" required />
+            </label>
+            <label>
+              <span>Yukseklik</span>
+              <input name="resolutionHeight" type="number" min="480" max="2160" step="2" required />
+            </label>
+            <label>
+              <span>Snapshotlar</span>
+              <select name="showSnapshots">
+                <option value="false">Gosterme</option>
+                <option value="true">Goster</option>
+              </select>
+              <small class="field-hint">
+                Varsayilan olarak snapshot surumler gizlenir.
+              </small>
+            </label>
+            <label class="wide">
+              <span>Java yolu</span>
+              <div class="picker-row">
+                <input name="javaPath" type="text" />
+                <button type="button" class="ghost-button" id="pickJavaButton">Sec</button>
+              </div>
+              <small class="field-hint">
+                Java yolu genelde `javaw.exe` olur. Bilmiyorsan bos birak, launcher sistemdeki Java'yi kullanmayi dener.
+              </small>
+            </label>
+            <label class="wide">
+              <span>Oyun klasoru</span>
+              <div class="picker-row">
+                <input name="gameDir" type="text" required />
+                <button type="button" class="ghost-button" id="pickGameDirButton">Sec</button>
+              </div>
+            </label>
+            <div class="wide">
+              <button type="submit" class="primary-button">Ayarlarini Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

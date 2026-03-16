@@ -1,0 +1,68 @@
+{
+  "name": "skyland-3-launcher",
+  "version": "1.0.0",
+  "description": "SKYLAND 3",
+  "main": "src/main/main.js",
+  "productName": "SKYLAND 3",
+  "author": "Berklast",
+  "license": "MIT",
+  "scripts": {
+    "start": "node scripts/start-electron.js",
+    "dev": "node scripts/start-electron.js",
+    "build": "node scripts/build-installer.js",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "minecraft-launcher-core": "^3.18.2"
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^26.8.1",
+    "7zip-bin": "^5.2.0",
+    "rcedit": "^4.0.1"
+  },
+  "build": {
+    "appId": "com.skyland3.launcher",
+    "productName": "SKYLAND 3",
+    "copyright": "Copyright (c) 2026 Berklast",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "afterPack": "scripts/after-pack.js",
+    "extraResources": [
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      },
+      {
+        "from": "node_modules/7zip-bin/win/x64/7za.exe",
+        "to": "tools/7za.exe"
+      }
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "legalTrademarks": "Berklast",
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "SKYLAND 3",
+      "uninstallDisplayName": "SKYLAND 3",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    },
+    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+  }
+}

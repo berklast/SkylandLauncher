@@ -1,0 +1,40 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "usernames": {
+      ".read": true,
+      "$username": {
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || data.child('uid').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['uid', 'email', 'username', 'createdAt']) && newData.child('uid').isString() && newData.child('email').isString() && newData.child('username').isString() && newData.child('createdAt').isString()"
+      }
+    },
+    "launcherUsers": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "username": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{3,24}$/)"
+        },
+        "usernameLower": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9_]{3,24}$/)"
+        },
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length <= 32"
+        },
+        "email": {
+          ".validate": "newData.isString()"
+        },
+        "mcNickname": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{1,16}$/)"
+        },
+        "createdAt": {
+          ".validate": "newData.isString()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isString()"
+        }
+      }
+    }
+  }
+}
